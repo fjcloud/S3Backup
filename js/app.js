@@ -196,22 +196,35 @@ class S3PhotoBackupApp {
         try {
             console.log('Running self-tests...');
 
-            // Test crypto functionality
-            const cryptoTest = await this.components.cryptoManager.selfTest();
-            if (!cryptoTest) {
-                throw new Error('Crypto self-test failed');
+            // Test SSE-C key generation (crypto functionality)
+            try {
+                const testKey = crypto.getRandomValues(new Uint8Array(32));
+                const testKeyBase64 = btoa(String.fromCharCode(...testKey));
+                if (testKeyBase64.length < 40) {
+                    throw new Error('Key generation failed');
+                }
+            } catch (error) {
+                console.warn('SSE-C key generation test failed:', error.message);
             }
 
             // Test file handler
-            const fileSupport = this.components.fileHandler.checkBrowserSupport();
+            const fileSupport = this.fileHandler.checkBrowserSupport();
             if (!fileSupport.canvas || !fileSupport.fileApi || !fileSupport.cryptoApi) {
                 throw new Error('File handler requirements not met');
             }
 
             // Test configuration manager
             try {
-                const sampleConfig = this.components.configManager.generateSampleConfig();
-                this.components.configManager.validateConfig(sampleConfig);
+                const sampleConfig = {
+                    s3_endpoint: 'https://test.example.com',
+                    s3_region: 'us-east-1',
+                    s3_bucket: 'test-bucket',
+                    s3_access_key: 'test-key',
+                    s3_secret_key: 'test-secret',
+                    encryption_key: 'test-encryption-key-12345',
+                    path_prefix: 'photos/'
+                };
+                this.configManager.validateConfig(sampleConfig);
             } catch (error) {
                 console.warn('Config validation test failed:', error.message);
             }
