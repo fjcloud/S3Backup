@@ -25,41 +25,35 @@ class S3PhotoBackupApp {
             // Check browser compatibility
             this.checkBrowserCompatibility();
             
-            // Initialize components (order matters for dependencies)
-            try {
-                // Core crypto functionality (for config encryption only now)
-                if (!window.CryptoManager) {
-                    throw new Error('CryptoManager not loaded');
-                }
-                this.cryptoManager = new CryptoManager();
-                
-                // Configuration management
-                if (!window.ConfigManager) {
-                    throw new Error('ConfigManager not loaded');
-                }
-                this.configManager = new ConfigManager(this.cryptoManager);
-                
-                // S3 client with SSE-C encryption
-                if (!window.S3ClientSSE) {
-                    throw new Error('S3ClientSSE not loaded');
-                }
-                
-                // File handling (no encryption needed now)
-                if (!window.FileHandler) {
-                    throw new Error('FileHandler not loaded');
-                }
-                this.fileHandler = new FileHandler();
-                
-                // UI management
-                if (!window.UIManager) {
-                    throw new Error('UIManager not loaded');
-                }
-                this.uiManager = new UIManager(this.configManager, this.fileHandler);
-                
-                console.log('All components loaded successfully');
-            } catch (error) {
-                throw new Error(`Component initialization failed: ${error.message}`);
+                    // Initialize components (order matters for dependencies)
+        try {
+            // Configuration management (with built-in encryption)
+            if (!window.ConfigManager) {
+                throw new Error('ConfigManager not loaded');
             }
+            this.configManager = new ConfigManager();
+            
+            // S3 client with SSE-C encryption
+            if (!window.S3ClientSSE) {
+                throw new Error('S3ClientSSE not loaded');
+            }
+            
+            // File handling (no client-side encryption needed with SSE-C)
+            if (!window.FileHandler) {
+                throw new Error('FileHandler not loaded');
+            }
+            this.fileHandler = new FileHandler();
+            
+            // UI management
+            if (!window.UIManager) {
+                throw new Error('UIManager not loaded');
+            }
+            this.uiManager = new UIManager(this.configManager, this.fileHandler);
+            
+            console.log('All components loaded successfully');
+        } catch (error) {
+            throw new Error(`Component initialization failed: ${error.message}`);
+        }
             
             // Set up global error handling
             this.setupErrorHandling();

@@ -23,6 +23,108 @@ class ConfigManager {
     }
 
     /**
+     * Simple encryption for config data using Web Crypto API
+     * @param {string} data - Data to encrypt
+     * @param {string} key - Encryption key
+     * @returns {Promise<string>} Base64 encrypted data
+     */
+    async encryptConfig(data, key) {
+        try {
+            const encoder = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                encoder.encode(key),
+                { name: 'PBKDF2' },
+                false,
+                ['deriveBits', 'deriveKey']
+            );
+
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const cryptoKey = await crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['encrypt']
+            );
+
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encrypted = await crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv },
+                cryptoKey,
+                encoder.encode(data)
+            );
+
+            // Combine salt + iv + encrypted data
+            const combined = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+            combined.set(salt);
+            combined.set(iv, salt.length);
+            combined.set(new Uint8Array(encrypted), salt.length + iv.length);
+
+            return btoa(String.fromCharCode(...combined));
+        } catch (error) {
+            throw new Error(`Config encryption failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Simple decryption for config data using Web Crypto API
+     * @param {string} encryptedData - Base64 encrypted data
+     * @param {string} key - Encryption key
+     * @returns {Promise<string>} Decrypted data
+     */
+    async decryptConfig(encryptedData, key) {
+        try {
+            const combined = new Uint8Array([...atob(encryptedData)].map(c => c.charCodeAt(0)));
+            const salt = combined.slice(0, 16);
+            const iv = combined.slice(16, 28);
+            const encrypted = combined.slice(28);
+
+            const encoder = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                encoder.encode(key),
+                { name: 'PBKDF2' },
+                false,
+                ['deriveBits', 'deriveKey']
+            );
+
+            const cryptoKey = await crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['decrypt']
+            );
+
+            const decrypted = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv },
+                cryptoKey,
+                encrypted
+            );
+
+            return new TextDecoder().decode(decrypted);
+        } catch (error) {
+            throw new Error(`Config decryption failed: ${error.message}`);
+        }
+    }
+
+    /**
+     * Validate encryption key (simplified)
+     * @param {string} key - Key to validate
+     * @returns {Object} Validation result
+     */
+    validateEncryptionKey(key) {
+        if (!key || typeof key !== 'string') {
+            return { valid: false, message: 'Encryption key is required' };
+        }
+        if (key.length < 16) {
+            return { valid: false, message: 'Encryption key must be at least 16 characters' };
+        }
+        return { valid: true, message: 'Key is valid' };
+    }
+
+    /**
      * Initialize configuration manager
      * @returns {Promise<boolean>} True if existing config was loaded
      */
@@ -197,7 +299,7 @@ class ConfigManager {
             const configJson = JSON.stringify(this.currentConfig);
             
             // Encrypt configuration before storing
-            const encrypted = await window.cryptoManager.encryptString(configJson, this.configKey);
+            const encrypted = await this.encryptConfig(configJson, this.configKey);
             
             const storageData = {
                 encrypted: encrypted,
@@ -226,12 +328,7 @@ class ConfigManager {
             const storageData = JSON.parse(storedData);
             
             // Decrypt configuration
-            const configJson = await window.cryptoManager.decryptString(
-                storageData.encrypted.encryptedData,
-                storageData.encrypted.salt,
-                storageData.encrypted.iv,
-                this.configKey
-            );
+            const configJson = await this.decryptConfig(storageData.encrypted, this.configKey);
             
             const config = JSON.parse(configJson);
             this.validateConfig(config);
@@ -290,9 +387,9 @@ class ConfigManager {
         }
         
         // Validate encryption key strength
-        const keyValidation = window.cryptoManager.validatePassphrase(config.encryption_key);
-        if (!keyValidation.isValid) {
-            throw new Error(`Weak encryption key: ${keyValidation.feedback.join(', ')}`);
+        const keyValidation = this.validateEncryptionKey(config.encryption_key);
+        if (!keyValidation.valid) {
+            throw new Error(`Weak encryption key: ${keyValidation.message}`);
         }
         
         // Validate bucket name format (basic validation)
