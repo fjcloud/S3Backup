@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Secure S3 photo backup with client-side encryption">
+    <title>S3 Photo Backup</title>
+    
+    <!-- Security headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:;">
+    
+    <!-- PWA meta tags -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <!-- Application Shell -->
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">📸 S3 Photo Backup</h1>
+                <nav class="header-nav">
+                    <button id="btn-settings" class="nav-btn" aria-label="Settings">⚙️</button>
+                    <button id="btn-upload" class="nav-btn primary" aria-label="Upload Photos">📤</button>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-content" class="main-content">
+            <!-- Configuration Screen -->
+            <section id="config-screen" class="screen active">
+                <div class="screen-content">
+                    <h2>Configuration</h2>
+                    <div class="config-container">
+                        <!-- QR Code Scanner -->
+                        <div class="config-section">
+                            <h3>Import Configuration</h3>
+                            <div class="qr-scanner-container">
+                                <div id="qr-scanner" class="qr-scanner">
+                                    <button id="btn-start-scanner" class="btn btn-secondary">
+                                        📷 Scan QR Code
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manual Configuration -->
+                        <div class="config-section">
+                            <h3>Manual Configuration</h3>
+                            <form id="config-form" class="config-form">
+                                <div class="form-group">
+                                    <label for="s3-endpoint">S3 Endpoint URL</label>
+                                    <input type="url" id="s3-endpoint" placeholder="https://s3.amazonaws.com" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="s3-region">Region</label>
+                                    <input type="text" id="s3-region" placeholder="us-east-1" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="s3-bucket">Bucket Name</label>
+                                    <input type="text" id="s3-bucket" placeholder="my-photo-backup" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="s3-access-key">Access Key</label>
+                                    <input type="text" id="s3-access-key" placeholder="AKIAIOSFODNN7EXAMPLE" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="s3-secret-key">Secret Key</label>
+                                    <input type="password" id="s3-secret-key" placeholder="Secret Access Key" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="encryption-key">Encryption Key</label>
+                                    <input type="password" id="encryption-key" placeholder="Your encryption passphrase (min 32 chars)" minlength="32" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="path-prefix">Path Prefix (optional)</label>
+                                    <input type="text" id="path-prefix" placeholder="photos/">
+                                </div>
+                                
+                                <div class="form-actions">
+                                    <button type="button" id="btn-test-connection" class="btn btn-secondary">
+                                        🔍 Test Connection
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        💾 Save Configuration
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Export Configuration -->
+                        <div class="config-section">
+                            <h3>Export Configuration</h3>
+                            <div class="qr-export-container">
+                                <div id="qr-code-display" class="qr-code-display hidden">
+                                    <!-- QR code will be generated here -->
+                                </div>
+                                <button id="btn-generate-qr" class="btn btn-secondary" disabled>
+                                    📱 Generate QR Code
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Upload Screen -->
+            <section id="upload-screen" class="screen hidden">
+                <div class="screen-content">
+                    <h2>Upload Photos</h2>
+                    <div class="upload-container">
+                        <div id="drop-zone" class="drop-zone">
+                            <div class="drop-zone-content">
+                                <div class="drop-icon">📁</div>
+                                <h3>Drop photos here or click to select</h3>
+                                <p>Supports JPEG, PNG, WebP formats</p>
+                                <input type="file" id="file-input" multiple accept="image/*" hidden>
+                                <button id="btn-select-files" class="btn btn-primary">Select Photos</button>
+                            </div>
+                        </div>
+                        
+                        <div id="upload-queue" class="upload-queue hidden">
+                            <h3>Upload Queue</h3>
+                            <div id="upload-list" class="upload-list">
+                                <!-- Upload items will be added here -->
+                            </div>
+                            <div class="upload-actions">
+                                <button id="btn-start-upload" class="btn btn-primary">Start Upload</button>
+                                <button id="btn-clear-queue" class="btn btn-secondary">Clear Queue</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gallery Screen -->
+            <section id="gallery-screen" class="screen hidden">
+                <div class="screen-content">
+                    <h2>Photo Gallery</h2>
+                    <div class="gallery-controls">
+                        <div class="search-container">
+                            <input type="text" id="search-input" placeholder="Search photos..." class="search-input">
+                            <button id="btn-search" class="btn btn-secondary">🔍</button>
+                        </div>
+                        <div class="view-controls">
+                            <button id="btn-grid-view" class="btn btn-secondary active">⊞</button>
+                            <button id="btn-list-view" class="btn btn-secondary">☰</button>
+                        </div>
+                    </div>
+                    <div id="photo-grid" class="photo-grid">
+                        <!-- Photo thumbnails will be loaded here -->
+                    </div>
+                    <div id="loading-indicator" class="loading-indicator hidden">
+                        <div class="spinner"></div>
+                        <p>Loading photos...</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Photo Viewer Modal -->
+        <div id="photo-viewer" class="modal hidden">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <div class="viewer-header">
+                    <div class="viewer-info">
+                        <span id="photo-title">Photo Title</span>
+                        <span id="photo-date">Date</span>
+                    </div>
+                    <div class="viewer-actions">
+                        <button id="btn-download-photo" class="btn btn-secondary" aria-label="Download">💾</button>
+                        <button id="btn-close-viewer" class="btn btn-secondary" aria-label="Close">✖️</button>
+                    </div>
+                </div>
+                <div class="viewer-body">
+                    <button id="btn-prev-photo" class="nav-arrow nav-arrow-left" aria-label="Previous">‹</button>
+                    <div class="image-container">
+                        <img id="viewer-image" src="" alt="" class="viewer-image">
+                        <div id="image-loading" class="image-loading hidden">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                    <button id="btn-next-photo" class="nav-arrow nav-arrow-right" aria-label="Next">›</button>
+                </div>
+                <div class="viewer-footer">
+                    <div id="photo-metadata" class="photo-metadata">
+                        <!-- Metadata will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div id="status-message" class="status-message">Ready</div>
+            <div id="progress-container" class="progress-container hidden">
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <span id="progress-text" class="progress-text">0%</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="spinner large"></div>
+            <p>Loading application...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="lib/qrcode.min.js"></script>
+    <script src="lib/qr-scanner.min.js"></script>
+    <script src="js/crypto.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/s3-client.js"></script>
+    <script src="js/file-handler.js"></script>
+    <script src="js/ui-components.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html> 
