@@ -1,0 +1,9 @@
+{
+  "s3_endpoint": "https://s3.amazonaws.com",
+  "s3_region": "",
+  "s3_bucket": "test-photo-backup",
+  "s3_access_key": "TEST_ACCESS_KEY_EXAMPLE",
+  "s3_secret_key": "TEST_SECRET_KEY_EXAMPLE_NOT_REAL",
+  "encryption_key": "this-is-a-test-encryption-key-that-is-long-enough-for-validation-purposes",
+  "path_prefix": "photos/"
+} 

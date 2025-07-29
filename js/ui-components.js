@@ -339,10 +339,20 @@ class UIManager {
             const qrDataURL = await window.configManager.generateQRCode();
             const qrDisplay = document.getElementById('qr-code-display');
             
-            qrDisplay.innerHTML = `<img src="${qrDataURL}" alt="Configuration QR Code" style="max-width: 100%;">`;
+            qrDisplay.innerHTML = `
+                <div style="text-align: center;">
+                    <img src="${qrDataURL}" alt="Configuration QR Code" style="max-width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+                    <p style="margin-top: 1rem; font-size: var(--font-size-sm); color: var(--text-secondary);">
+                        Scan this QR code to import configuration on another device
+                    </p>
+                    <p style="margin-top: 0.5rem; font-size: var(--font-size-sm); color: var(--text-muted);">
+                        <strong>⚠️ Contains sensitive data - share securely</strong>
+                    </p>
+                </div>
+            `;
             qrDisplay.classList.remove('hidden');
             
-            this.showStatusMessage('QR code generated successfully', 'success');
+            this.showStatusMessage('QR code generated successfully - contains all configuration data', 'success');
         } catch (error) {
             this.showStatusMessage(`QR code generation failed: ${error.message}`, 'error');
         }
@@ -353,9 +363,28 @@ class UIManager {
      */
     async startQRScanner() {
         try {
-            // This would integrate with the QR scanner library
-            // For now, we'll show a placeholder message
-            this.showStatusMessage('QR scanner not yet implemented - use manual configuration', 'warning');
+            // Check if we have camera access
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Camera not available in this browser');
+            }
+
+            // For now, show a file input as an alternative to camera scanning
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    try {
+                        // In a real implementation, you would use a QR code reading library
+                        // For now, just show instructions
+                        this.showStatusMessage('QR code scanning from image not yet implemented. Please use manual configuration or generate a QR code to see the format.', 'info');
+                    } catch (error) {
+                        this.showStatusMessage(`QR scan failed: ${error.message}`, 'error');
+                    }
+                }
+            };
+            input.click();
         } catch (error) {
             this.showStatusMessage(`QR scanner failed: ${error.message}`, 'error');
         }

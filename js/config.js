@@ -116,13 +116,11 @@ class ConfigManager {
                 throw new Error('Configuration not set');
             }
             
-            // Import S3Client if available
-            if (typeof window.s3Client === 'undefined') {
-                throw new Error('S3 client not available');
-            }
-            
+            // Create S3Client instance for testing
             const s3Client = new window.S3Client(this.getConfig(true));
-            const result = await s3Client.testConnection();
+            
+            // Test connection by attempting to list objects
+            await s3Client.testConnection();
             
             return {
                 success: true,
@@ -262,16 +260,29 @@ class ConfigManager {
     validateConfig(config) {
         const requiredFields = [
             's3_endpoint',
-            's3_region', 
             's3_bucket',
             's3_access_key',
             's3_secret_key',
             'encryption_key'
         ];
         
+        // Optional fields that should be strings if provided
+        const optionalFields = [
+            's3_region',
+            'path_prefix'
+        ];
+        
         for (const field of requiredFields) {
             if (!config[field] || typeof config[field] !== 'string' || config[field].trim() === '') {
                 throw new Error(`Missing or invalid required field: ${field}`);
+            }
+        }
+        
+        for (const field of optionalFields) {
+            if (config[field] !== undefined && config[field] !== null && config[field] !== '') {
+                if (typeof config[field] !== 'string') {
+                    throw new Error(`Invalid optional field: ${field} must be a string`);
+                }
             }
         }
         
@@ -291,6 +302,11 @@ class ConfigManager {
         // Validate bucket name format (basic validation)
         if (!/^[a-z0-9.-]{3,63}$/i.test(config.s3_bucket)) {
             throw new Error('Invalid S3 bucket name format');
+        }
+        
+        // Set default region if not provided
+        if (!config.s3_region || config.s3_region.trim() === '') {
+            config.s3_region = 'us-east-1'; // Default region
         }
         
         // Validate path prefix

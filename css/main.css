@@ -264,6 +264,23 @@ body {
 
 .status-message {
     flex: 1;
+    transition: color var(--transition-fast);
+}
+
+.status-message.success {
+    color: var(--success-color);
+}
+
+.status-message.error {
+    color: var(--error-color);
+}
+
+.status-message.warning {
+    color: var(--warning-color);
+}
+
+.status-message.info {
+    color: var(--primary-color);
 }
 
 .progress-container {
