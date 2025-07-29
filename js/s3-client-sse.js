@@ -203,6 +203,15 @@ class S3ClientSSE {
             const url = `${this.config.s3_endpoint}/${this.config.s3_bucket}?${params}`;
             const headers = await this.generateAuthHeaders('GET', `/${this.config.s3_bucket}`, params);
             
+            // Debug: Log the request details
+            console.log('S3 Request:', {
+                url: url,
+                method: 'GET',
+                headers: headers,
+                region: this.config.s3_region,
+                bucket: this.config.s3_bucket
+            });
+            
             const response = await fetch(url, { headers });
             if (!response.ok) {
                 let errorMessage = `List objects failed with status ${response.status}: ${response.statusText}`;
@@ -253,7 +262,13 @@ class S3ClientSSE {
             });
 
             const canonicalQueryString = queryParams.toString();
-            const canonicalHeaders = `host:${new URL(this.config.s3_endpoint).host}\n`;
+            // Extract host from endpoint (handle both with and without protocol)
+            let endpointUrl = this.config.s3_endpoint;
+            if (!endpointUrl.startsWith('http')) {
+                endpointUrl = `https://${endpointUrl}`;
+            }
+            const host = new URL(endpointUrl).host;
+            const canonicalHeaders = `host:${host}\n`;
             const signedHeaders = 'host';
             const payloadHash = 'UNSIGNED-PAYLOAD';
             
