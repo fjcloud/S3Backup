@@ -454,6 +454,36 @@
     transform: translate(-50%, -50%);
 }
 
+/* Key input group styling */
+.key-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.key-input-group input {
+    flex: 1;
+}
+
+.key-input-group .btn {
+    flex-shrink: 0;
+    padding: 0.5rem 0.75rem;
+    font-size: var(--font-size-sm);
+    white-space: nowrap;
+}
+
+.key-input-group .btn-secondary {
+    background: var(--surface-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transition: all var(--transition-fast);
+}
+
+.key-input-group .btn-secondary:hover {
+    background: var(--surface-tertiary);
+    border-color: var(--primary-color);
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .config-container {

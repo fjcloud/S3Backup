@@ -119,6 +119,22 @@ class UIManager {
         encryptionKeyInput.addEventListener('input', (e) => {
             this.validateEncryptionKey(e.target.value);
         });
+
+        // Key generation and visibility toggle
+        const generateKeyBtn = document.getElementById('generate-key-btn');
+        const toggleKeyVisibilityBtn = document.getElementById('toggle-key-visibility');
+
+        if (generateKeyBtn) {
+            generateKeyBtn.addEventListener('click', () => {
+                this.generateEncryptionKey();
+            });
+        }
+
+        if (toggleKeyVisibilityBtn) {
+            toggleKeyVisibilityBtn.addEventListener('click', () => {
+                this.toggleKeyVisibility();
+            });
+        }
     }
 
     /**
@@ -405,6 +421,66 @@ class UIManager {
             input.style.borderColor = 'var(--error-color)';
         } else {
             input.style.borderColor = 'var(--border-color)';
+        }
+    }
+
+    /**
+     * Generate a strong encryption key
+     */
+    generateEncryptionKey() {
+        try {
+            // Generate 32 random bytes and convert to base64
+            const randomBytes = new Uint8Array(32);
+            crypto.getRandomValues(randomBytes);
+            
+            // Convert to base64 for easier handling
+            const key = btoa(String.fromCharCode(...randomBytes));
+            
+            const encryptionKeyInput = document.getElementById('encryption-key');
+            if (encryptionKeyInput) {
+                encryptionKeyInput.value = key;
+                encryptionKeyInput.type = 'text'; // Show the generated key
+                
+                // Update the toggle button
+                const toggleBtn = document.getElementById('toggle-key-visibility');
+                if (toggleBtn) {
+                    toggleBtn.textContent = '🙈';
+                }
+                
+                this.showStatusMessage('Strong encryption key generated', 'success');
+                
+                // Automatically hide after 10 seconds for security
+                setTimeout(() => {
+                    if (encryptionKeyInput.type === 'text') {
+                        encryptionKeyInput.type = 'password';
+                        if (toggleBtn) {
+                            toggleBtn.textContent = '👁️';
+                        }
+                        this.showStatusMessage('Key hidden for security', 'info');
+                    }
+                }, 10000);
+            }
+        } catch (error) {
+            console.error('Key generation failed:', error);
+            this.showStatusMessage('Failed to generate key', 'error');
+        }
+    }
+
+    /**
+     * Toggle encryption key visibility
+     */
+    toggleKeyVisibility() {
+        const encryptionKeyInput = document.getElementById('encryption-key');
+        const toggleBtn = document.getElementById('toggle-key-visibility');
+        
+        if (encryptionKeyInput && toggleBtn) {
+            if (encryptionKeyInput.type === 'password') {
+                encryptionKeyInput.type = 'text';
+                toggleBtn.textContent = '🙈';
+            } else {
+                encryptionKeyInput.type = 'password';
+                toggleBtn.textContent = '👁️';
+            }
         }
     }
 
@@ -834,6 +910,40 @@ class UIManager {
      */
     setupGalleryLoader() {
         // Future: Implement intersection observer for lazy loading
+    }
+
+    /**
+     * Load and display photo from S3 with SSE-C
+     * @param {Object} metadata - Photo metadata
+     */
+    async loadAndDisplayPhoto(metadata) {
+        try {
+            const config = this.configManager.getConfig();
+            if (!config) {
+                throw new Error('Configuration not available');
+            }
+
+            // Create S3 client with SSE-C
+            const s3Client = new S3ClientSSE(config);
+            
+            this.showStatusMessage('Loading photo...', 'info');
+            
+            // Download photo from S3 (S3 will decrypt it automatically with SSE-C)
+            const photoData = await s3Client.downloadFile(metadata.s3Key);
+            
+            // Create blob URL for display
+            const blob = new Blob([photoData], { type: metadata.type });
+            const blobUrl = URL.createObjectURL(blob);
+            
+            // Display in photo viewer
+            this.showPhotoViewer(blobUrl, metadata);
+            
+            this.showStatusMessage('Photo loaded successfully', 'success');
+            
+        } catch (error) {
+            console.error('Failed to load photo:', error);
+            this.showStatusMessage(`Failed to load photo: ${error.message}`, 'error');
+        }
     }
 }
 

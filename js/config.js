@@ -108,29 +108,25 @@ class ConfigManager {
 
     /**
      * Test S3 connection with current configuration
-     * @returns {Promise<{success: boolean, message: string}>}
+     * @returns {Promise<boolean>} True if connection successful
      */
     async testConnection() {
         try {
-            if (!this.isConfigured) {
+            const config = this.getConfig();
+            if (!config) {
                 throw new Error('Configuration not set');
             }
             
-            // Create S3Client instance for testing
-            const s3Client = new window.S3Client(this.getConfig(true));
+            // Create S3 client with SSE-C
+            const s3Client = new S3ClientSSE(config);
             
-            // Test connection by attempting to list objects
+            // Test the connection
             await s3Client.testConnection();
             
-            return {
-                success: true,
-                message: 'Connection successful'
-            };
+            return true;
         } catch (error) {
-            return {
-                success: false,
-                message: error.message
-            };
+            console.error('[ERROR] Connection failed:', error.message);
+            throw new Error(`Connection failed: ${error.message}`);
         }
     }
 

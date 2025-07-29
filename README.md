@@ -1,6 +1,25 @@
-# S3 Photo Backup - Client-Side Encrypted Photo Storage
+## 🚀 S3 Photo Backup
 
-A secure, client-side web application for backing up photos to S3-compatible storage with local encryption.
+A secure, client-side web application for backing up photos to S3-compatible storage with **SSE-C encryption**. Share your configuration via QR code and access your photos from any device.
+
+### ✨ Features
+
+- 📱 **Pure Web App** - No backend required, runs entirely in your browser
+- 🔐 **SSE-C Encryption** - Server-side encryption with customer-provided keys
+- 🏗️ **S3 Compatible** - Works with AWS S3, MinIO, DigitalOcean Spaces, Hetzner Object Storage
+- 📷 **Smart Photo Management** - Automatic thumbnails, EXIF data extraction, organized storage
+- 📋 **QR Code Sharing** - Save/share configuration securely via QR codes
+- 🎨 **Modern UI** - Responsive design with dark mode support
+- 🔧 **Easy Setup** - Guided configuration with connection testing
+- 🔑 **Key Generation** - Built-in strong encryption key generator
+
+### 🔒 Security Features
+
+- **SSE-C Encryption**: Photos are encrypted on S3 servers using your encryption key
+- **Configuration Encryption**: S3 credentials encrypted locally before storage
+- **No Data Transmission**: Your encryption key never leaves your device
+- **Secure Key Generation**: Cryptographically secure random key generation
+- **Auto-Hide Keys**: Generated keys automatically hidden after 10 seconds
 
 ## Features
 
@@ -146,17 +165,42 @@ Your S3 user needs these permissions:
 ```
 
 ### CORS Configuration
-Add this CORS configuration to your S3 bucket:
+
+1. **Set environment variables for AWS CLI:**
+   ```bash
+   export AWS_ACCESS_KEY_ID="your_access_key"
+   export AWS_SECRET_ACCESS_KEY="your_secret_key"
+   export AWS_ENDPOINT_URL="https://fsn1.your-objectstorage.com"
+   ```
+
+2. **Apply CORS policy:**
+   ```bash
+   aws s3api put-bucket-cors \
+     --endpoint-url https://fsn1.your-objectstorage.com \
+     --bucket s3backupfj \
+     --cors-configuration file://cors-config.json
+   ```
+
+3. **Verify CORS was applied:**
+   ```bash
+   aws s3api get-bucket-cors \
+     --endpoint-url https://fsn1.your-objectstorage.com \
+     --bucket s3backupfj
+   ```
+
+### CORS Configuration (cors-config.json)
 ```json
-[
-  {
-    "AllowedHeaders": ["*"],
-    "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
-    "AllowedOrigins": ["*"],
-    "ExposeHeaders": ["ETag"],
-    "MaxAgeSeconds": 3000
-  }
-]
+{
+  "CORSRules": [
+    {
+      "AllowedOrigins": ["https://s3.msl.cloud"],
+      "AllowedHeaders": ["*"],
+      "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+      "ExposeHeaders": ["ETag", "x-amz-meta-*"],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}
 ```
 
 ## Development
