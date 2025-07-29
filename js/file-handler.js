@@ -526,6 +526,9 @@ class FileHandler {
     }
 }
 
+// Create global FileHandler class
+window.FileHandler = FileHandler;
+
 // Create global instance
 window.fileHandler = new FileHandler();
 

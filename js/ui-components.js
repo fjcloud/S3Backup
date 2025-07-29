@@ -947,6 +947,9 @@ class UIManager {
     }
 }
 
+// Create global UIManager class
+window.UIManager = UIManager;
+
 // Create global instance
 window.uiManager = new UIManager();
 
