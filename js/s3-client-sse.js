@@ -195,7 +195,20 @@ class S3ClientSSE {
             
             const response = await fetch(url, { headers });
             if (!response.ok) {
-                throw new Error(`List objects failed with status ${response.status}: ${response.statusText}`);
+                let errorMessage = `List objects failed with status ${response.status}: ${response.statusText}`;
+                
+                if (response.status === 403) {
+                    const responseText = await response.text();
+                    errorMessage += `\n\nPossible causes:
+                    1. Wrong region (current: ${this.config.s3_region}) - should match endpoint region
+                    2. Access key doesn't have s3:ListBucket permission
+                    3. Bucket policy restricts access
+                    4. Wrong endpoint format
+                    
+                    Response: ${responseText}`;
+                }
+                
+                throw new Error(errorMessage);
             }
             
             const xmlText = await response.text();
