@@ -5,6 +5,16 @@
 
 class S3ClientSSE {
     constructor(config) {
+        // Debug: Log the configuration being passed
+        console.log('S3ClientSSE config:', {
+            endpoint: config.s3_endpoint,
+            region: config.s3_region,
+            bucket: config.s3_bucket,
+            hasAccessKey: !!config.s3_access_key,
+            hasSecretKey: !!config.s3_secret_key,
+            hasEncryptionKey: !!config.encryption_key
+        });
+        
         this.config = {
             s3_endpoint: config.s3_endpoint,
             s3_region: config.s3_region || 'us-east-1',
@@ -368,7 +378,26 @@ class S3ClientSSE {
             const dateStamp = dateString.slice(0, 8);
             
             const canonicalQueryString = queryParams.toString();
-            const canonicalHeaders = `host:${new URL(this.config.s3_endpoint).host}\nx-amz-date:${dateString}\n`;
+            
+            // Debug: Check if endpoint is defined
+            if (!this.config.s3_endpoint) {
+                throw new Error('S3 endpoint is not configured');
+            }
+            
+            // Extract host from endpoint (handle both with and without protocol)
+            let endpointUrl = this.config.s3_endpoint;
+            if (!endpointUrl.startsWith('http')) {
+                endpointUrl = `https://${endpointUrl}`;
+            }
+            
+            let host;
+            try {
+                host = new URL(endpointUrl).host;
+            } catch (urlError) {
+                throw new Error(`Invalid endpoint URL: ${this.config.s3_endpoint} - ${urlError.message}`);
+            }
+            
+            const canonicalHeaders = `host:${host}\nx-amz-date:${dateString}\n`;
             const signedHeaders = 'host;x-amz-date';
             const payloadHash = 'UNSIGNED-PAYLOAD';
             
@@ -395,7 +424,7 @@ class S3ClientSSE {
             return {
                 'Authorization': authorization,
                 'X-Amz-Date': dateString,
-                'Host': new URL(this.config.s3_endpoint).host
+                'Host': host
             };
         } catch (error) {
             throw new Error(`Failed to generate auth headers: ${error.message}`);
