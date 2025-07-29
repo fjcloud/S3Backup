@@ -62,7 +62,7 @@ class S3PhotoBackupApp {
             await this.runSelfTests();
             
             // Initialize UI
-            await this.components.uiManager.initialize();
+            await this.uiManager.initialize();
             
             this.isInitialized = true;
             console.log('Application initialized successfully');
@@ -178,12 +178,12 @@ class S3PhotoBackupApp {
         });
 
         // Network error handler
-        window.addEventListener('offline', () => {
-            this.components.uiManager?.showStatusMessage('Network connection lost', 'warning');
+                window.addEventListener('offline', () => {
+            this.uiManager?.showStatusMessage('Network connection lost', 'warning');
         });
-
+        
         window.addEventListener('online', () => {
-            this.components.uiManager?.showStatusMessage('Network connection restored', 'success');
+            this.uiManager?.showStatusMessage('Network connection restored', 'success');
         });
 
         console.log('Error handling setup complete');
@@ -254,8 +254,8 @@ class S3PhotoBackupApp {
         console.error('Application error:', errorInfo);
 
         // Show user-friendly message
-        if (this.components.uiManager) {
-            this.components.uiManager.showStatusMessage(
+        if (this.uiManager) {
+            this.uiManager.showStatusMessage(
                 `Error in ${context}: ${errorInfo.message}`,
                 'error'
             );
@@ -396,9 +396,9 @@ class S3PhotoBackupApp {
     exportState() {
         return {
             app: this.getAppInfo(),
-            config: this.components.configManager?.getStatus(),
-            uploadQueue: this.components.uiManager?.uploadQueue?.size || 0,
-            gallery: this.components.uiManager?.photoGallery?.length || 0
+            config: this.configManager?.isConfigured || false,
+            uploadQueue: this.uiManager?.uploadQueue?.size || 0,
+            gallery: this.uiManager?.photoGallery?.length || 0
         };
     }
 
@@ -421,9 +421,7 @@ class S3PhotoBackupApp {
     cleanup() {
         try {
             // Clear sensitive data from memory
-            if (this.components.cryptoManager) {
-                // The crypto manager should handle its own cleanup
-            }
+            // SSE-C encryption uses S3 server-side encryption, no cleanup needed
 
             console.log('Application cleanup completed');
         } catch (error) {
