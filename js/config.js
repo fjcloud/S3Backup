@@ -523,6 +523,9 @@ class ConfigManager {
 // Create global instance
 window.configManager = new ConfigManager();
 
+// Create global ConfigManager class
+window.ConfigManager = ConfigManager;
+
 // Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ConfigManager;
