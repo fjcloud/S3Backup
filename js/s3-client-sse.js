@@ -163,13 +163,60 @@ class S3ClientSSE {
     }
 
     /**
-     * Test S3 connection
+     * Test S3 connection using HEAD request
      * @returns {Promise<boolean>} True if connection successful
      */
     async testConnection() {
         try {
-            // Try to list objects with a limit of 1 to test connection
-            await this.listObjects('', 1);
+            // Debug: Check if bucket is configured
+            if (!this.config.s3_bucket) {
+                throw new Error('S3 bucket is not configured');
+            }
+            
+            const url = `${this.config.s3_endpoint}/${this.config.s3_bucket}`;
+            const headers = await this.generateAuthHeaders('HEAD', `/${this.config.s3_bucket}`);
+            
+            // Debug: Log the request details
+            console.log('S3 HEAD Request:', {
+                url: url,
+                method: 'HEAD',
+                headers: headers,
+                region: this.config.s3_region,
+                bucket: this.config.s3_bucket,
+                endpoint: this.config.s3_endpoint,
+                hasAccessKey: !!this.config.s3_access_key,
+                hasSecretKey: !!this.config.s3_secret_key
+            });
+            
+            const response = await fetch(url, { 
+                method: 'HEAD',
+                headers,
+                mode: 'cors',
+                credentials: 'omit'
+            });
+            
+            if (!response.ok) {
+                let errorMessage = `HEAD request failed with status ${response.status}: ${response.statusText}`;
+                
+                if (response.status === 403) {
+                    errorMessage += `\n\nPossible causes:
+                    1. Wrong region (current: ${this.config.s3_region}) - should match endpoint region
+                    2. Access key doesn't have s3:GetBucketLocation permission
+                    3. Bucket policy restricts access
+                    4. Wrong endpoint format`;
+                }
+                
+                throw new Error(errorMessage);
+            }
+            
+            // Debug: Log response headers
+            console.log('S3 HEAD Response Headers:', {
+                status: response.status,
+                statusText: response.statusText,
+                cors: response.headers.get('access-control-allow-origin'),
+                contentType: response.headers.get('content-type')
+            });
+            
             return true;
         } catch (error) {
             throw new Error(`S3 connection test failed: ${error.message}`);
