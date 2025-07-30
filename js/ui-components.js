@@ -306,8 +306,7 @@ class UIManager {
                 s3_bucket: document.getElementById('s3-bucket').value.trim(),
                 s3_access_key: document.getElementById('s3-access-key').value.trim(),
                 s3_secret_key: document.getElementById('s3-secret-key').value.trim(),
-                encryption_key: document.getElementById('encryption-key').value.trim(),
-                path_prefix: document.getElementById('path-prefix').value.trim() || 'photos/'
+                encryption_key: document.getElementById('encryption-key').value.trim()
             };
 
             await window.configManager.setConfig(config);
