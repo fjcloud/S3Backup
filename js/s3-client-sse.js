@@ -212,7 +212,11 @@ class S3ClientSSE {
                 bucket: this.config.s3_bucket
             });
             
-            const response = await fetch(url, { headers });
+            const response = await fetch(url, { 
+                headers,
+                mode: 'cors',
+                credentials: 'omit'
+            });
             if (!response.ok) {
                 let errorMessage = `List objects failed with status ${response.status}: ${response.statusText}`;
                 
@@ -229,6 +233,14 @@ class S3ClientSSE {
                 
                 throw new Error(errorMessage);
             }
+            
+            // Debug: Log response headers
+            console.log('S3 Response Headers:', {
+                status: response.status,
+                statusText: response.statusText,
+                cors: response.headers.get('access-control-allow-origin'),
+                contentType: response.headers.get('content-type')
+            });
             
             const xmlText = await response.text();
             return this.parseListObjectsResponse(xmlText);
