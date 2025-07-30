@@ -300,15 +300,33 @@ class UIManager {
      */
     async saveConfiguration() {
         try {
+            // Debug: Log form field values
+            const endpoint = document.getElementById('s3-endpoint').value.trim();
+            const region = document.getElementById('s3-region').value.trim();
+            const bucket = document.getElementById('s3-bucket').value.trim();
+            const accessKey = document.getElementById('s3-access-key').value.trim();
+            const secretKey = document.getElementById('s3-secret-key').value.trim();
+            const encryptionKey = document.getElementById('encryption-key').value.trim();
+            
+            console.log('Form values:', {
+                endpoint,
+                region,
+                bucket,
+                hasAccessKey: !!accessKey,
+                hasSecretKey: !!secretKey,
+                hasEncryptionKey: !!encryptionKey
+            });
+            
             const config = {
-                s3_endpoint: document.getElementById('s3-endpoint').value.trim(),
-                s3_region: document.getElementById('s3-region').value.trim(),
-                s3_bucket: document.getElementById('s3-bucket').value.trim(),
-                s3_access_key: document.getElementById('s3-access-key').value.trim(),
-                s3_secret_key: document.getElementById('s3-secret-key').value.trim(),
-                encryption_key: document.getElementById('encryption-key').value.trim()
+                s3_endpoint: endpoint,
+                s3_region: region,
+                s3_bucket: bucket,
+                s3_access_key: accessKey,
+                s3_secret_key: secretKey,
+                encryption_key: encryptionKey
             };
 
+            console.log('Saving config:', config);
             await window.configManager.setConfig(config);
             this.updateConfigurationDisplay();
             this.showStatusMessage('Configuration saved successfully', 'success');
@@ -316,6 +334,7 @@ class UIManager {
             // Enable QR code generation
             document.getElementById('btn-generate-qr').disabled = false;
         } catch (error) {
+            console.error('Save configuration error:', error);
             this.showStatusMessage(`Configuration save failed: ${error.message}`, 'error');
         }
     }
@@ -331,13 +350,8 @@ class UIManager {
             testBtn.disabled = true;
             testBtn.textContent = '🔄 Testing...';
             
-            const result = await window.configManager.testConnection();
-            
-            if (result.success) {
-                this.showStatusMessage('S3 connection successful!', 'success');
-            } else {
-                this.showStatusMessage(`Connection failed: ${result.message}`, 'error');
-            }
+            await window.configManager.testConnection();
+            this.showStatusMessage('S3 connection successful!', 'success');
         } catch (error) {
             this.showStatusMessage(`Connection test failed: ${error.message}`, 'error');
         } finally {

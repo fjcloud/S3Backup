@@ -213,7 +213,7 @@ class ConfigManager {
      */
     async testConnection() {
         try {
-            const config = this.getConfig();
+            const config = this.getConfig(true); // Include sensitive data (secret key)
             if (!config) {
                 throw new Error('Configuration not set');
             }
