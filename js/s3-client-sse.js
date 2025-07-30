@@ -21,14 +21,8 @@ class S3ClientSSE {
             s3_bucket: config.s3_bucket,
             s3_access_key: config.s3_access_key,
             s3_secret_key: config.s3_secret_key,
-            encryption_key: config.encryption_key,
-            path_prefix: config.path_prefix || 'photos/'
+            encryption_key: config.encryption_key
         };
-        
-        // Ensure path prefix ends with /
-        if (this.config.path_prefix && !this.config.path_prefix.endsWith('/')) {
-            this.config.path_prefix += '/';
-        }
         
         this.serviceName = 's3';
         this.algorithm = 'AWS4-HMAC-SHA256';
@@ -87,10 +81,8 @@ class S3ClientSSE {
      */
     async uploadFile(file, key, progressCallback = null) {
         try {
-            const fullKey = this.config.path_prefix + key;
-            
             // Generate presigned URL for PUT
-            const presignedUrl = await this.generatePresignedUrl(fullKey, 'PUT', 3600);
+            const presignedUrl = await this.generatePresignedUrl(key, 'PUT', 3600);
             
             // Get SSE-C headers
             const sseHeaders = await this.getSSEHeaders();
@@ -112,7 +104,7 @@ class S3ClientSSE {
                 // Handle completion
                 xhr.addEventListener('load', () => {
                     if (xhr.status >= 200 && xhr.status < 300) {
-                        resolve(this.getObjectUrl(fullKey));
+                        resolve(this.getObjectUrl(key));
                     } else {
                         reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`));
                     }
@@ -153,8 +145,7 @@ class S3ClientSSE {
      */
     async downloadFile(key) {
         try {
-            const fullKey = this.config.path_prefix + key;
-            const presignedUrl = await this.generatePresignedUrl(fullKey, 'GET', 3600);
+            const presignedUrl = await this.generatePresignedUrl(key, 'GET', 3600);
             const sseHeaders = await this.getSSEHeaders();
             
             const response = await fetch(presignedUrl, {
@@ -193,10 +184,9 @@ class S3ClientSSE {
      */
     async listObjects(prefix = '', maxKeys = 1000) {
         try {
-            const fullPrefix = this.config.path_prefix + prefix;
             const params = new URLSearchParams({
                 'list-type': '2',
-                'prefix': fullPrefix,
+                'prefix': prefix,
                 'max-keys': maxKeys.toString()
             });
             
@@ -374,12 +364,8 @@ class S3ClientSSE {
             const size = content.getElementsByTagName('Size')[0]?.textContent;
             
             if (key) {
-                const displayKey = key.startsWith(this.config.path_prefix) 
-                    ? key.substring(this.config.path_prefix.length)
-                    : key;
-                
                 objects.push({
-                    key: displayKey,
+                    key: key,
                     fullKey: key,
                     lastModified: lastModified ? new Date(lastModified) : null,
                     etag: etag ? etag.replace(/"/g, '') : null,
@@ -448,8 +434,7 @@ class S3ClientSSE {
      * Get object URL for direct access (Note: SSE-C objects can't be accessed directly without headers)
      */
     getObjectUrl(key) {
-        const fullKey = key.startsWith(this.config.path_prefix) ? key : this.config.path_prefix + key;
-        return `${this.config.s3_endpoint}/${this.config.s3_bucket}/${fullKey}`;
+        return `${this.config.s3_endpoint}/${this.config.s3_bucket}/${key}`;
     }
 
     /**

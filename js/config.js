@@ -15,7 +15,6 @@ class ConfigManager {
             s3_access_key: '',
             s3_secret_key: '',
             encryption_key: '',
-            path_prefix: 'photos/',
             version: '1.0'
         };
         this.currentConfig = { ...this.defaultConfig };
