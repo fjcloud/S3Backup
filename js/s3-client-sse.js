@@ -190,6 +190,11 @@ class S3ClientSSE {
                 'max-keys': maxKeys.toString()
             });
             
+            // Debug: Check if bucket is configured
+            if (!this.config.s3_bucket) {
+                throw new Error('S3 bucket is not configured');
+            }
+            
             const url = `${this.config.s3_endpoint}/${this.config.s3_bucket}?${params}`;
             const headers = await this.generateAuthHeaders('GET', `/${this.config.s3_bucket}`, params);
             
@@ -199,7 +204,10 @@ class S3ClientSSE {
                 method: 'GET',
                 headers: headers,
                 region: this.config.s3_region,
-                bucket: this.config.s3_bucket
+                bucket: this.config.s3_bucket,
+                endpoint: this.config.s3_endpoint,
+                hasAccessKey: !!this.config.s3_access_key,
+                hasSecretKey: !!this.config.s3_secret_key
             });
             
             const response = await fetch(url, { 
