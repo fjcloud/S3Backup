@@ -163,7 +163,7 @@ class S3ClientSSE {
     }
 
     /**
-     * Test S3 connection using HEAD request
+     * Test S3 connection using simple GET request
      * @returns {Promise<boolean>} True if connection successful
      */
     async testConnection() {
@@ -173,35 +173,48 @@ class S3ClientSSE {
                 throw new Error('S3 bucket is not configured');
             }
             
-            const url = `${this.config.s3_endpoint}/${this.config.s3_bucket}`;
-            const headers = await this.generateAuthHeaders('HEAD', `/${this.config.s3_bucket}`);
+            // First, test basic connectivity without auth headers
+            const testUrl = `${this.config.s3_endpoint}/${this.config.s3_bucket}`;
             
-            // Debug: Log the request details
-            console.log('S3 HEAD Request:', {
-                url: url,
-                method: 'HEAD',
-                headers: headers,
-                region: this.config.s3_region,
-                bucket: this.config.s3_bucket,
-                endpoint: this.config.s3_endpoint,
-                hasAccessKey: !!this.config.s3_access_key,
-                hasSecretKey: !!this.config.s3_secret_key
+            console.log('Testing basic connectivity to:', testUrl);
+            
+            const basicResponse = await fetch(testUrl, { 
+                method: 'GET',
+                mode: 'cors',
+                credentials: 'omit'
             });
             
-            const response = await fetch(url, { 
-                method: 'HEAD',
+            console.log('Basic connectivity test result:', {
+                status: basicResponse.status,
+                statusText: basicResponse.statusText,
+                cors: basicResponse.headers.get('access-control-allow-origin')
+            });
+            
+            // Now test with authentication
+            const headers = await this.generateAuthHeaders('GET', `/${this.config.s3_bucket}`);
+            
+            console.log('S3 authenticated request:', {
+                url: testUrl,
+                method: 'GET',
+                headers: headers,
+                region: this.config.s3_region,
+                bucket: this.config.s3_bucket
+            });
+            
+            const response = await fetch(testUrl, { 
+                method: 'GET',
                 headers,
                 mode: 'cors',
                 credentials: 'omit'
             });
             
             if (!response.ok) {
-                let errorMessage = `HEAD request failed with status ${response.status}: ${response.statusText}`;
+                let errorMessage = `Authenticated request failed with status ${response.status}: ${response.statusText}`;
                 
                 if (response.status === 403) {
                     errorMessage += `\n\nPossible causes:
                     1. Wrong region (current: ${this.config.s3_region}) - should match endpoint region
-                    2. Access key doesn't have s3:GetBucketLocation permission
+                    2. Access key doesn't have s3:ListBucket permission
                     3. Bucket policy restricts access
                     4. Wrong endpoint format`;
                 }
@@ -209,8 +222,7 @@ class S3ClientSSE {
                 throw new Error(errorMessage);
             }
             
-            // Debug: Log response headers
-            console.log('S3 HEAD Response Headers:', {
+            console.log('S3 authenticated response:', {
                 status: response.status,
                 statusText: response.statusText,
                 cors: response.headers.get('access-control-allow-origin'),
