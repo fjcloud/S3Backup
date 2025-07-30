@@ -1,12 +1,12 @@
 ## 🚀 S3 Photo Backup
 
-A secure, client-side web application for backing up photos to S3-compatible storage with **SSE-C encryption**. Share your configuration via QR code and access your photos from any device.
+A secure, client-side web application for backing up photos to **AWS S3** with **SSE-C encryption**. Share your configuration via QR code and access your photos from any device.
 
 ### ✨ Features
 
 - 📱 **Pure Web App** - No backend required, runs entirely in your browser
 - 🔐 **SSE-C Encryption** - Server-side encryption with customer-provided keys
-- 🏗️ **S3 Compatible** - Works with AWS S3, MinIO, DigitalOcean Spaces, Hetzner Object Storage
+- ☁️ **AWS S3 Compatible** - Works with any AWS S3 bucket
 - 📷 **Smart Photo Management** - Automatic thumbnails, EXIF data extraction, organized storage
 - 📋 **QR Code Sharing** - Save/share configuration securely via QR codes
 - 🎨 **Modern UI** - Responsive design with dark mode support

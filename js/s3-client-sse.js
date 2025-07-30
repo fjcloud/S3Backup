@@ -16,7 +16,7 @@ class S3ClientSSE {
         });
         
         this.config = {
-            s3_endpoint: config.s3_endpoint,
+            s3_endpoint: config.s3_endpoint || 'https://s3.amazonaws.com',
             s3_region: config.s3_region || 'us-east-1',
             s3_bucket: config.s3_bucket,
             s3_access_key: config.s3_access_key,
@@ -262,12 +262,8 @@ class S3ClientSSE {
             });
 
             const canonicalQueryString = queryParams.toString();
-            // Extract host from endpoint (handle both with and without protocol)
-            let endpointUrl = this.config.s3_endpoint;
-            if (!endpointUrl.startsWith('http')) {
-                endpointUrl = `https://${endpointUrl}`;
-            }
-            const host = new URL(endpointUrl).host;
+            // For AWS S3, use the endpoint directly
+            const host = new URL(this.config.s3_endpoint).host;
             const canonicalHeaders = `host:${host}\n`;
             const signedHeaders = 'host';
             const payloadHash = 'UNSIGNED-PAYLOAD';
@@ -399,18 +395,8 @@ class S3ClientSSE {
                 throw new Error('S3 endpoint is not configured');
             }
             
-            // Extract host from endpoint (handle both with and without protocol)
-            let endpointUrl = this.config.s3_endpoint;
-            if (!endpointUrl.startsWith('http')) {
-                endpointUrl = `https://${endpointUrl}`;
-            }
-            
-            let host;
-            try {
-                host = new URL(endpointUrl).host;
-            } catch (urlError) {
-                throw new Error(`Invalid endpoint URL: ${this.config.s3_endpoint} - ${urlError.message}`);
-            }
+            // For AWS S3, use the endpoint directly
+            const host = new URL(this.config.s3_endpoint).host;
             
             const canonicalHeaders = `host:${host}\nx-amz-date:${dateString}\n`;
             const signedHeaders = 'host;x-amz-date';

@@ -1,0 +1,17 @@
+# AWS Region for your S3 bucket
+aws_region = "us-east-1"
+
+# Optional: Custom bucket name prefix
+# bucket_name_prefix = "my-photo-backup-"
+
+# Optional: Disable versioning (not recommended)
+# enable_versioning = false
+
+# Optional: Disable server-side encryption (not recommended)
+# enable_sse = false
+
+# Optional: Allow public access (not recommended for production)
+# block_public_access = false
+
+# Optional: Restrict CORS origins for production
+# cors_allowed_origins = ["https://yourdomain.com", "https://app.yourdomain.com"] 

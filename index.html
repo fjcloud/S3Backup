@@ -59,13 +59,20 @@
                             <h3>Manual Configuration</h3>
                             <form id="config-form" class="config-form">
                                 <div class="form-group">
-                                    <label for="s3-endpoint">S3 Endpoint URL</label>
-                                    <input type="url" id="s3-endpoint" placeholder="https://s3.amazonaws.com" required>
+                                    <label for="s3-endpoint">S3 Endpoint</label>
+                                    <input type="text" id="s3-endpoint" placeholder="https://s3.amazonaws.com" value="https://s3.amazonaws.com" required>
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="s3-region">Region (optional)</label>
-                                    <input type="text" id="s3-region" placeholder="hel1 (for Hetzner) or leave empty if included in endpoint">
+                                    <label for="s3-region">AWS Region</label>
+                                    <select id="s3-region" required>
+                                        <option value="">Select AWS Region</option>
+                                        <option value="us-east-1">US East (N. Virginia) - us-east-1</option>
+                                        <option value="us-west-2">US West (Oregon) - us-west-2</option>
+                                        <option value="eu-west-1">Europe (Ireland) - eu-west-1</option>
+                                        <option value="ap-southeast-1">Asia Pacific (Singapore) - ap-southeast-1</option>
+                                        <option value="sa-east-1">South America (São Paulo) - sa-east-1</option>
+                                    </select>
                                 </div>
                                 
                                 <div class="form-group">
